@@ -10,8 +10,8 @@
     "build": "cd client && npm run build"
   },
   "keywords": [],
-  "author": "Sutton Charpentier",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
     "concurrently": "^5.1.0"
   }

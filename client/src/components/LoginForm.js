@@ -1,42 +1,47 @@
+// see SignupForm.js for comments
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { LOGIN_USER } from '../utils/mutations';
 import { Form, Button, Alert } from 'react-bootstrap';
 
+import { loginUser } from '../utils/API';
 import Auth from '../utils/auth';
 
-const LoginForm = (props) => {
-  const [formState, setFormState] = useState({ email: '', password: '' });
+const LoginForm = () => {
+  const [userFormData, setUserFormData] = useState({ email: '', password: '' });
   const [validated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
-  const [login] = useMutation(LOGIN_USER);
 
-// update state based on form input changes
-const handleChange = (event) => {
-  const { name, value } = event.target;
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setUserFormData({ ...userFormData, [name]: value });
+  };
 
-  setFormState({
-    ...formState,
-    [name]: value,
-  });
-};
-  
-   // submit form
-   const handleFormSubmit = async (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
-    console.log(formState);
-    try {
-      const { data } = await login({
-        variables: { ...formState },
-      });
 
-      Auth.login(data.login.token);
-    } catch (e) {
-      console.error(e);
+    // check if form has everything (as per react-bootstrap docs)
+    const form = event.currentTarget;
+    if (form.checkValidity() === false) {
+      event.preventDefault();
+      event.stopPropagation();
     }
 
-    // clear form values
-    setFormState({
+    try {
+      const response = await loginUser(userFormData);
+
+      if (!response.ok) {
+        throw new Error('something went wrong!');
+      }
+
+      const { token, user } = await response.json();
+      console.log(user);
+      Auth.login(token);
+    } catch (err) {
+      console.error(err);
+      setShowAlert(true);
+    }
+
+    setUserFormData({
+      username: '',
       email: '',
       password: '',
     });
@@ -54,8 +59,8 @@ const handleChange = (event) => {
             type='text'
             placeholder='Your email'
             name='email'
-            value={formState.email}
-            onChange={handleChange}
+            onChange={handleInputChange}
+            value={userFormData.email}
             required
           />
           <Form.Control.Feedback type='invalid'>Email is required!</Form.Control.Feedback>
@@ -67,14 +72,14 @@ const handleChange = (event) => {
             type='password'
             placeholder='Your password'
             name='password'
-            value={formState.password}
-            onChange={handleChange}
+            onChange={handleInputChange}
+            value={userFormData.password}
             required
           />
           <Form.Control.Feedback type='invalid'>Password is required!</Form.Control.Feedback>
         </Form.Group>
         <Button
-          disabled={!(formState.email && formState.password)}
+          disabled={!(userFormData.email && userFormData.password)}
           type='submit'
           variant='success'>
           Submit
